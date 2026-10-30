@@ -6,11 +6,11 @@ A shopping cart application built with React, Vite, Tailwind CSS, and Node.js/Ex
 
 | Shop | Product |
 |---|---|
-| ![Shop](docs/screenshots/shop.png) | ![Product](docs/screenshots/product.png) |
+| ![Shop](docs/screenshots/bigshop-shop.png) | ![Product](docs/screenshots/bigshop-product.png) |
 
 | Cart | Admin Panel |
 |---|---|
-| ![Cart](docs/screenshots/cart.png) | ![Admin Panel](docs/screenshots/admin.png) |
+| ![Cart](docs/screenshots/bigshop-cart.png) | ![Admin Panel](docs/screenshots/bigshop-admin.png) |
 
 ## Tech Stack
 
