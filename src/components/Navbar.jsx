@@ -29,7 +29,7 @@ export default function Navbar() {
           to="/"
           className="text-xl font-bold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)] tracking-wide"
         >
-          Lazada from Temu
+          BIG SHOP
         </Link>
 
         <div className="flex items-center gap-6">

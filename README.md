@@ -1,4 +1,4 @@
-# Shop v1.2
+# BIG SHOP
 
 A shopping cart application built with React, Vite, Tailwind CSS, and Node.js/Express.
 
