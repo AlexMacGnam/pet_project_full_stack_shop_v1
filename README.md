@@ -12,6 +12,10 @@ A shopping cart application built with React, Vite, Tailwind CSS, and Node.js/Ex
 |---|---|
 | ![Cart](docs/screenshots/bigshop-cart.png) | ![Admin Panel](docs/screenshots/bigshop-admin.png) |
 
+| Cart Dropdown | Checkout |
+|---|---|
+| ![Cart Dropdown](docs/screenshots/bigshop-cart-dropdown.png) | ![Checkout](docs/screenshots/bigshop-checkout.png) |
+
 ## Tech Stack
 
 - **Frontend:** React 19, Vite, Tailwind CSS v4
