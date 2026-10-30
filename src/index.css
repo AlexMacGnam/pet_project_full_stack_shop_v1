@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+body {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  min-height: 100vh;
+}
+
+.navbar-gradient {
+  background: linear-gradient(-60deg, #1a0533, #0a1a4e, #2d1060, #0a2a4e, #1a0a3e, #061a40);
+  background-size: 400% 400%;
+  animation: gradientShift 10s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

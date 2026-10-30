@@ -1,0 +1,1061 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Shop API",
+    "version": "1.2.0",
+    "description": "REST API for the Shop application"
+  },
+  "servers": [{ "url": "http://localhost:3001" }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Review": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "userId": { "type": "integer" },
+          "userName": { "type": "string" },
+          "productId": { "type": "integer" },
+          "orderId": { "type": "integer" },
+          "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "comment": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string" }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "userId": { "type": "integer", "nullable": true },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "address": { "type": "string" },
+          "items": { "type": "array", "items": { "type": "object" } },
+          "totalPrice": { "type": "number" },
+          "status": { "type": "string", "example": "Pending" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "orderId": { "type": "integer" },
+          "userId": { "type": "integer" },
+          "reason": { "type": "string", "example": "not_received" },
+          "description": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["open", "in_progress", "resolved", "rejected"]
+          },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register a new user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string", "example": "Alex" },
+                  "email": { "type": "string", "example": "alex@example.com" },
+                  "password": { "type": "string", "example": "secret123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User created, returns JWT token" },
+          "400": {
+            "description": "Validation error or email already registered"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login with email and password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "example": "alex@example.com" },
+                  "password": { "type": "string", "example": "secret123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Returns JWT token and user data" },
+          "400": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Logout and invalidate refresh token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refreshToken"],
+                "properties": {
+                  "refreshToken": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Logged out" }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh access token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refreshToken"],
+                "properties": {
+                  "refreshToken": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "New access token" },
+          "401": { "description": "Invalid or expired refresh token" }
+        }
+      }
+    },
+    "/api/auth/verify-otp": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Verify OTP and activate account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "otp"],
+                "properties": {
+                  "email": { "type": "string", "example": "alex@example.com" },
+                  "otp": { "type": "string", "example": "1234" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Account verified, returns tokens" },
+          "400": { "description": "Invalid OTP" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/api/auth/forgot": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Request password reset OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": { "type": "string", "example": "alex@example.com" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OTP sent" },
+          "400": { "description": "Email is required" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/api/auth/verify-otp-forgot": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Verify password reset OTP and get reset token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "otp"],
+                "properties": {
+                  "email": { "type": "string", "example": "alex@example.com" },
+                  "otp": { "type": "string", "example": "1234" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Returns resetToken" },
+          "400": { "description": "Invalid OTP" }
+        }
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Set new password using reset token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["resetToken", "password"],
+                "properties": {
+                  "resetToken": { "type": "string" },
+                  "password": { "type": "string", "example": "newpassword123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Password changed successfully" },
+          "400": { "description": "Invalid or expired reset token" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Get current user from token",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Returns current user",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          },
+          "401": { "description": "Invalid or missing token" }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get all users without passwords (dev only)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/User" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get orders for authenticated user, empty array for guests",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Order" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Create a new order (works for guests and authenticated users)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["address", "items", "totalPrice"],
+                "properties": {
+                  "name": { "type": "string", "example": "Alex" },
+                  "email": { "type": "string", "example": "alex@example.com" },
+                  "address": { "type": "string", "example": "123 Main St" },
+                  "items": { "type": "array", "items": { "type": "object" } },
+                  "totalPrice": { "type": "number", "example": 45000 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Order created" },
+          "400": { "description": "Validation error" }
+        }
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get order by ID (owner only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order data",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" }
+              }
+            }
+          },
+          "403": { "description": "Access denied" },
+          "404": { "description": "Order not found" }
+        }
+      }
+    },
+    "/api/upload": {
+      "post": {
+        "tags": ["Upload"],
+        "summary": "Upload an image or video file",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns file URL (and thumbnail URL for videos)"
+          },
+          "400": { "description": "No file uploaded or invalid file type" }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Get all products",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of products" },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Create a new product",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "code", "price", "amount"],
+                "properties": {
+                  "name": { "type": "string", "example": "iPhone 15" },
+                  "code": { "type": "string", "example": "IPH15" },
+                  "medias": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "example": []
+                  },
+                  "price": { "type": "number", "example": 999 },
+                  "amount": { "type": "integer", "example": 10 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Product created" },
+          "400": { "description": "Validation error" }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Get product by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Product data" },
+          "404": { "description": "Product not found" }
+        }
+      },
+      "put": {
+        "tags": ["Products"],
+        "summary": "Update a product",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "code": { "type": "string" },
+                  "medias": { "type": "array", "items": { "type": "string" } },
+                  "price": { "type": "number" },
+                  "amount": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated product" },
+          "404": { "description": "Product not found" }
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Delete a product",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Product deleted" },
+          "404": { "description": "Product not found" }
+        }
+      }
+    },
+    "/api/cart": {
+      "get": {
+        "tags": ["Cart"],
+        "summary": "Get current user's cart",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Cart data" },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "delete": {
+        "tags": ["Cart"],
+        "summary": "Clear all items from cart",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Cart cleared" },
+          "404": { "description": "Cart not found" }
+        }
+      }
+    },
+    "/api/cart/items": {
+      "post": {
+        "tags": ["Cart"],
+        "summary": "Add a product to cart",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["productId"],
+                "properties": {
+                  "productId": { "type": "integer", "example": 1 },
+                  "quantity": { "type": "integer", "example": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated cart" },
+          "400": { "description": "Validation error" },
+          "404": { "description": "Product not found" }
+        }
+      }
+    },
+    "/api/reports": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Get reports (admin: all, user: own)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of reports",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Report" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Reports"],
+        "summary": "Create a report for a paid order (triggers auto-refund)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["orderId", "reason"],
+                "properties": {
+                  "orderId": { "type": "integer", "example": 1 },
+                  "reason": {
+                    "type": "string",
+                    "enum": ["not_received", "wrong_item", "damaged", "other"]
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Item never arrived"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Report created (refund auto-triggered if payment intent exists)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Report" }
+              }
+            }
+          },
+          "400": { "description": "Validation error or order not " },
+          "403": { "description": "Access denied" },
+          "404": { "description": "Order not found" }
+        }
+      }
+    },
+    "/api/reports/{id}": {
+      "patch": {
+        "tags": ["Reports"],
+        "summary": "Update report status (admin only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["open", "in_progress", "resolved", "rejected"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated report" },
+          "400": { "description": "Invalid status" },
+          "403": { "description": "Admin access required" },
+          "404": { "description": "Report not found" }
+        }
+      }
+    },
+    "/api/reports/{id}/refund": {
+      "post": {
+        "tags": ["Reports"],
+        "summary": "Manually issue a Stripe refund for a report (admin only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Refund issued" },
+          "400": {
+            "description": "Report already closed or order already refunded"
+          },
+          "403": { "description": "Admin access required" },
+          "404": { "description": "Report or order not found" },
+          "500": { "description": "Stripe error" }
+        }
+      }
+    },
+    "/api/payments/create-session": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Create a Stripe checkout session for an order",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["orderId"],
+                "properties": {
+                  "orderId": { "type": "integer", "example": 1 },
+                  "couponCode": { "type": "string", "example": "SAVE10" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Returns Stripe checkout URL" },
+          "400": {
+            "description": "Order already paid, expired, or invalid coupon"
+          },
+          "403": { "description": "Access denied" },
+          "404": { "description": "Order not found" }
+        }
+      }
+    },
+    "/api/payments/invoice/{orderId}": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Get Stripe invoice PDF URL for a paid order",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Returns invoice PDF URL" },
+          "403": { "description": "Access denied" },
+          "404": { "description": "Order or invoice not found" }
+        }
+      }
+    },
+    "/api/payments/webhook": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Stripe webhook endpoint (internal, not for direct use)",
+        "responses": {
+          "200": { "description": "Webhook received" },
+          "400": { "description": "Invalid signature" }
+        }
+      }
+    },
+    "/api/coupons": {
+      "get": {
+        "tags": ["Coupons"],
+        "summary": "Get all coupons",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of coupons" },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Coupons"],
+        "summary": "Create a coupon (admin only)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["code", "discountType", "discountValue"],
+                "properties": {
+                  "code": { "type": "string", "example": "SAVE10" },
+                  "discountType": {
+                    "type": "string",
+                    "enum": ["percent", "fixed"]
+                  },
+                  "discountValue": { "type": "number", "example": 10 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Coupon created" },
+          "400": { "description": "Validation error or duplicate code" },
+          "403": { "description": "Admin access required" }
+        }
+      }
+    },
+    "/api/coupons/{code}": {
+      "put": {
+        "tags": ["Coupons"],
+        "summary": "Update a coupon (admin only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "discountType": {
+                    "type": "string",
+                    "enum": ["percent", "fixed"]
+                  },
+                  "discountValue": { "type": "number", "example": 20 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Coupon updated" },
+          "400": { "description": "Validation error" },
+          "403": { "description": "Admin access required" },
+          "404": { "description": "Coupon not found" }
+        }
+      },
+      "delete": {
+        "tags": ["Coupons"],
+        "summary": "Delete a coupon (admin only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Coupon deleted" },
+          "403": { "description": "Admin access required" },
+          "404": { "description": "Coupon not found" }
+        }
+      }
+    },
+    "/api/cart/items/{productId}": {
+      "put": {
+        "tags": ["Cart"],
+        "summary": "Update item quantity in cart",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["quantity"],
+                "properties": {
+                  "quantity": { "type": "integer", "example": 2 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated cart" },
+          "400": { "description": "Validation error" },
+          "404": { "description": "Item not found" }
+        }
+      },
+      "delete": {
+        "tags": ["Cart"],
+        "summary": "Remove a product from cart",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Updated cart" },
+          "404": { "description": "Item not found" }
+        }
+      }
+    },
+    "/api/products/{id}/reviews": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Get reviews and average rating for a product",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reviews list with averageRating and total",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reviews": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Review" }
+                    },
+                    "averageRating": { "type": "number", "nullable": true },
+                    "total": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Product not found" }
+        }
+      }
+    },
+    "/api/reviews/ratings": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Get average rating and total for all products (batch)",
+        "responses": {
+          "200": {
+            "description": "Map of productId to avg and total",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "avg": { "type": "number" },
+                      "total": { "type": "integer" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/my": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Get reviews written by the current user",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of own reviews" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/reviews": {
+      "post": {
+        "tags": ["Reviews"],
+        "summary": "Submit a review for a product",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["productId", "orderId", "rating"],
+                "properties": {
+                  "productId": { "type": "integer", "example": 1 },
+                  "orderId": { "type": "integer", "example": 3 },
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "example": 4
+                  },
+                  "comment": { "type": "string", "example": "Great product!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Review created" },
+          "400": { "description": "Order not paid or product not in order" },
+          "401": { "description": "Unauthorized" },
+          "409": { "description": "Already reviewed this product" }
+        }
+      }
+    },
+    "/api/reviews/{id}": {
+      "put": {
+        "tags": ["Reviews"],
+        "summary": "Edit own review",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "comment": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated review" },
+          "403": { "description": "Access denied" },
+          "404": { "description": "Review not found" }
+        }
+      },
+      "delete": {
+        "tags": ["Reviews"],
+        "summary": "Delete own review (or any review if admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Review deleted" },
+          "403": { "description": "Access denied" },
+          "404": { "description": "Review not found" }
+        }
+      }
+    }
+  }
+}
