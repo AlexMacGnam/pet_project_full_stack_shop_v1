@@ -2,6 +2,16 @@
 
 A shopping cart application built with React, Vite, Tailwind CSS, and Node.js/Express.
 
+## Screenshots
+
+| Shop | Product |
+|---|---|
+| ![Shop](docs/screenshots/shop.png) | ![Product](docs/screenshots/product.png) |
+
+| Cart | Admin Panel |
+|---|---|
+| ![Cart](docs/screenshots/cart.png) | ![Admin Panel](docs/screenshots/admin.png) |
+
 ## Tech Stack
 
 - **Frontend:** React 19, Vite, Tailwind CSS v4
